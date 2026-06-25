@@ -2,6 +2,22 @@
 
 This directory vendors `1Hive/celeste-contracts` as the production Celeste baseline for Honey v2.
 
+## Identity-registry scope
+
+`IdentityRegistry` is intentionally a simple address registry for sybil-resistant protocol participation. The contract does not store identity proofs, metadata, profile data, or account-linking attestations. Keepers can coordinate evidence entirely off-chain through social consensus; the on-chain registry only answers whether an address has passed the protocol's challenge process.
+
+The naming remains `IdentityRegistry` because the registry gates participation in a sybil-resistant identity process, even though the on-chain object being registered is only an address.
+
+Minimal target behavior:
+
+- An address applies by posting collateral.
+- The application has a challenge period.
+- If unchallenged, the address can be added to the registry.
+- If challenged, Celeste arbitrates whether the address should be added.
+- Existing registered addresses can be challenged with collateral and removed if the challenge succeeds or if the member fails to respond.
+
+Compatibility note: where legacy Celeste plumbing still expects `hasUniqueUserId()` / `uniqueUserId()`, the simplified registry can treat the account address itself as the unique id. That preserves the Celeste integration boundary while making active-stake caps per registered address.
+
 ## Identity-registry changes
 
 Changes from upstream made in this workspace:
@@ -12,7 +28,7 @@ Changes from upstream made in this workspace:
 - Added `contracts/test/identity/IdentityRegistryMock.sol` for tests and local deployments.
 - Renamed controller module plumbing from `BRIGHTID_REGISTER` to `IDENTITY_REGISTRY`.
 - Updated controller getter plumbing to `getIdentityRegistry()` / `_identityRegistry()`.
-- Updated `JurorsRegistry` to use `identityActiveStake` and `_identityRegistry().uniqueUserId(...)`.
+- Updated `JurorsRegistry` to use `identityActiveStake` and `_identityRegistry().uniqueUserId(...)` for compatibility; the simplified address-registry model can return the account itself as `uniqueUserId`.
 - Added an explicit `_identityRegistry().isVerified(_juror)` check before juror activation.
 - Ported the old BrightID test helper/tests to the generic identity helper.
 
