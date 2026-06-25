@@ -1,7 +1,7 @@
 const { assertBn } = require('../helpers/asserts/assertBn')
 const { bn, bigExp } = require('../helpers/lib/numbers')
 const { buildHelper } = require('../helpers/wrappers/court')(web3, artifacts)
-const { buildBrightIdHelper } = require('../helpers/wrappers/brightid')(web3, artifacts)
+const { buildIdentityHelper } = require('../helpers/wrappers/identity')(web3, artifacts)
 const { assertRevert } = require('../helpers/asserts/assertThrow')
 const { ACTIVATE_DATA } = require('../helpers/utils/jurors')
 const { padLeft, toHex } = require('web3-utils')
@@ -15,7 +15,7 @@ const DisputeManager = artifacts.require('DisputeManagerMockForRegistry')
 const ERC20 = artifacts.require('ERC20Mock')
 
 contract('CourtSubscriptions', ([_, payer, jurorPeriod0Term1, jurorPeriod0Term3, jurorMidPeriod1]) => {
-  let controller, subscriptions, jurorsRegistry, feeToken, jurorToken, brightIdHelper, courtHelper
+  let controller, subscriptions, jurorsRegistry, feeToken, jurorToken, identityHelper, courtHelper
 
   const PCT_BASE_HIGH_PRECISION = bigExp(1, 18)
   const DONATED_FEES = bigExp(10, 18)
@@ -45,10 +45,10 @@ contract('CourtSubscriptions', ([_, payer, jurorPeriod0Term1, jurorPeriod0Term3,
     const disputeManager = await DisputeManager.new(controller.address)
     await controller.setDisputeManager(disputeManager.address)
 
-    brightIdHelper = buildBrightIdHelper()
-    const brightIdRegister = await brightIdHelper.deploy()
-    await brightIdHelper.registerUsers([jurorPeriod0Term1, jurorPeriod0Term3, jurorMidPeriod1])
-    await controller.setBrightIdRegister(brightIdRegister.address)
+    identityHelper = buildIdentityHelper()
+    const identityRegistry = await identityHelper.deploy()
+    await identityHelper.registerUsers([jurorPeriod0Term1, jurorPeriod0Term3, jurorMidPeriod1])
+    await controller.setIdentityRegistry(identityRegistry.address)
 
     // Donate subscription fees
     await feeToken.generateTokens(payer, DONATED_FEES)

@@ -59,8 +59,8 @@ contract CelesteMock is Celeste, TimeHelpersMock {
         _setModule(SUBSCRIPTIONS, _addr);
     }
 
-    function setBrightIdRegister(address _addr) external {
-        _setModule(BRIGHTID_REGISTER, _addr);
+    function setIdentityRegistry(address _addr) external {
+        _setModule(IDENTITY_REGISTRY, _addr);
     }
 
     function mockIncreaseTerm() external {

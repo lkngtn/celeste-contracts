@@ -1,7 +1,7 @@
 const { assertBn } = require('../helpers/asserts/assertBn')
 const { bn, bigExp } = require('../helpers/lib/numbers')
 const { buildHelper } = require('../helpers/wrappers/court')(web3, artifacts)
-const { buildBrightIdHelper } = require('../helpers/wrappers/brightid')(web3, artifacts)
+const { buildIdentityHelper } = require('../helpers/wrappers/identity')(web3, artifacts)
 const { assertRevert } = require('../helpers/asserts/assertThrow')
 const { REGISTRY_EVENTS } = require('../helpers/utils/events')
 const { REGISTRY_ERRORS } = require('../helpers/utils/errors')
@@ -12,8 +12,8 @@ const JurorsRegistry = artifacts.require('JurorsRegistry')
 const DisputeManager = artifacts.require('DisputeManagerMockForRegistry')
 const ERC20 = artifacts.require('ERC20Mock')
 
-contract('JurorsRegistry', ([_, jurorActiveAddress, jurorBrightIdAddress, juror2]) => {
-  let buildHelperClass, controller, registry, disputeManager, ANJ, brightIdHelper, brightIdRegister
+contract('JurorsRegistry', ([_, jurorActiveAddress, jurorIdentityAddress, juror2]) => {
+  let buildHelperClass, controller, registry, disputeManager, ANJ, identityHelper, identityRegistry
   let addresses, timestamp, sig
 
   const USE_MAX_ACTIVE_AMOUNT_FOR_0_JURORS = bn(-1)
@@ -67,23 +67,23 @@ contract('JurorsRegistry', ([_, jurorActiveAddress, jurorBrightIdAddress, juror2
     disputeManager = await DisputeManager.new(controller.address)
     await controller.setDisputeManager(disputeManager.address)
 
-    brightIdHelper = buildBrightIdHelper()
-    brightIdRegister = await brightIdHelper.deploy()
-    await brightIdHelper.registerUserWithMultipleAddresses(jurorBrightIdAddress, jurorActiveAddress)
-    await brightIdHelper.registerUser(juror2)
-    await controller.setBrightIdRegister(brightIdRegister.address)
+    identityHelper = buildIdentityHelper()
+    identityRegistry = await identityHelper.deploy()
+    await identityHelper.registerUserWithMultipleAddresses(jurorIdentityAddress, jurorActiveAddress)
+    await identityHelper.registerUser(juror2)
+    await controller.setIdentityRegistry(identityRegistry.address)
 
     registry = await JurorsRegistry.new(controller.address, TOTAL_ACTIVE_BALANCE_LIMIT)
     await controller.setJurorsRegistry(registry.address)
 
-    // Uncomment the below to test calling activate() via the BrightIdRegister. Note some tests are expected to fail with BRIGHTID_ADDRESS_VOIDED.
+    // Uncomment the below to test calling activate() via the IdentityRegistry. Note some tests are expected to fail with IDENTITY_ADDRESS_VOIDED.
     // registry.activate = async (amount, { from }) => {
-    //   console.log("Activate Via BrightIdRegister")
+    //   console.log("Activate Via IdentityRegistry")
     //   const activateFunctionData = registry.contract.methods.activate(amount.toString()).encodeABI()
     //   if (from === jurorActiveAddress) {
-    //     return await brightIdHelper.registerUserWithData([jurorActiveAddress, jurorBrightIdAddress], registry.address, activateFunctionData)
+    //     return await identityHelper.registerUserWithData([jurorActiveAddress, jurorIdentityAddress], registry.address, activateFunctionData)
     //   } else {
-    //     return await brightIdHelper.registerUserWithData([from], registry.address, activateFunctionData)
+    //     return await identityHelper.registerUserWithData([from], registry.address, activateFunctionData)
     //   }
     // }
   })
@@ -150,47 +150,47 @@ contract('JurorsRegistry', ([_, jurorActiveAddress, jurorBrightIdAddress, juror2
           requestedAmount = await useAmount(requestedAmount)
           const { available: previousAvailableBalance, pendingDeactivation: previousDeactivationBalance } = await registry.balanceOf(jurorActiveAddress)
           const activeAddressPreviousTotalActiveStake = await registry.jurorsTotalActiveStake(jurorActiveAddress)
-          const brightIdAddressPreviousTotalActiveStake = await registry.jurorsTotalActiveStake(jurorBrightIdAddress)
+          const identityAddressPreviousTotalActiveStake = await registry.jurorsTotalActiveStake(jurorIdentityAddress)
 
           await registry.activate(requestedAmount, { from })
 
           const activeAddressCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(jurorActiveAddress)
-          const brightIdAddressCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(jurorBrightIdAddress)
+          const identityAddressCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(jurorIdentityAddress)
 
           const activationAmount = requestedAmount.eq(bn(0))
             ? (deactivationDue ? previousAvailableBalance.add(previousDeactivationBalance) : previousAvailableBalance)
             : requestedAmount
           assertBn(activeAddressCurrentTotalActiveStake, activeAddressPreviousTotalActiveStake.add(activationAmount), 'incorrect total active stake for active account')
-          assertBn(brightIdAddressCurrentTotalActiveStake, brightIdAddressPreviousTotalActiveStake.add(activationAmount), 'incorrect total active stake for brightId account')
+          assertBn(identityAddressCurrentTotalActiveStake, identityAddressPreviousTotalActiveStake.add(activationAmount), 'incorrect total active stake for identity account')
         })
 
         if (!requestedAmount.eq(bn(0)) && !requestedAmount.eq(USE_MAX_ACTIVE_AMOUNT_FOR_0_JURORS)) {
-          it('updates the total active balance correctly when a different juror with the same brightid is used', async () => {
+          it('updates the total active balance correctly when a different juror with the same identity is used', async () => {
             requestedAmount = await useAmount(requestedAmount)
-            await ANJ.generateTokens(jurorBrightIdAddress, MIN_ACTIVE_AMOUNT)
-            await ANJ.approveAndCall(registry.address, MIN_ACTIVE_AMOUNT, '0x', { from: jurorBrightIdAddress })
+            await ANJ.generateTokens(jurorIdentityAddress, MIN_ACTIVE_AMOUNT)
+            await ANJ.approveAndCall(registry.address, MIN_ACTIVE_AMOUNT, '0x', { from: jurorIdentityAddress })
             const activeAddressPreviousTotalActiveStake = await registry.jurorsTotalActiveStake(jurorActiveAddress)
-            const brightIdAddressPreviousTotalActiveStake = await registry.jurorsTotalActiveStake(jurorBrightIdAddress)
+            const identityAddressPreviousTotalActiveStake = await registry.jurorsTotalActiveStake(jurorIdentityAddress)
 
             await registry.activate(requestedAmount, { from })
-            await registry.activate(MIN_ACTIVE_AMOUNT, { from: jurorBrightIdAddress })
+            await registry.activate(MIN_ACTIVE_AMOUNT, { from: jurorIdentityAddress })
 
             const totalActivatedAmount = requestedAmount.add(MIN_ACTIVE_AMOUNT)
             const activeAddressCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(jurorActiveAddress)
-            const brightIdAddressCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(jurorBrightIdAddress)
+            const identityAddressCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(jurorIdentityAddress)
             assertBn(activeAddressCurrentTotalActiveStake, activeAddressPreviousTotalActiveStake.add(totalActivatedAmount), 'incorrect total active stake for active account')
-            assertBn(brightIdAddressCurrentTotalActiveStake, brightIdAddressPreviousTotalActiveStake.add(totalActivatedAmount), 'incorrect total active stake for berightId account')
+            assertBn(identityAddressCurrentTotalActiveStake, identityAddressPreviousTotalActiveStake.add(totalActivatedAmount), 'incorrect total active stake for berightId account')
           })
         }
 
         if ((requestedAmount.eq(bn(0)) || requestedAmount.eq(USE_MAX_ACTIVE_AMOUNT_FOR_0_JURORS)) && overMaxCheck ) {
-          it('reverts when activating over max with a different juror with the same brightid', async () => {
+          it('reverts when activating over max with a different juror with the same identity', async () => {
             requestedAmount = await useAmount(requestedAmount)
-            await ANJ.generateTokens(jurorBrightIdAddress, MIN_ACTIVE_AMOUNT)
-            await ANJ.approveAndCall(registry.address, MIN_ACTIVE_AMOUNT, '0x', { from: jurorBrightIdAddress })
+            await ANJ.generateTokens(jurorIdentityAddress, MIN_ACTIVE_AMOUNT)
+            await ANJ.approveAndCall(registry.address, MIN_ACTIVE_AMOUNT, '0x', { from: jurorIdentityAddress })
 
             await registry.activate(requestedAmount, { from })
-            await assertRevert(registry.activate(MIN_ACTIVE_AMOUNT, { from: jurorBrightIdAddress }), "JR_ACTIVE_BALANCE_ABOVE_MAX")
+            await assertRevert(registry.activate(MIN_ACTIVE_AMOUNT, { from: jurorIdentityAddress }), "JR_ACTIVE_BALANCE_ABOVE_MAX")
           })
         }
 
@@ -361,19 +361,19 @@ contract('JurorsRegistry', ([_, jurorActiveAddress, jurorBrightIdAddress, juror2
           })
         })
 
-        context('when the juror calls activate through the BrightIdRegister', () => {
+        context('when the juror calls activate through the IdentityRegistry', () => {
           it('activates tokens as expected', async () => {
             const activateAmount = MIN_ACTIVE_AMOUNT
             const activateFunctionData = registry.contract.methods.activate(activateAmount.toString()).encodeABI()
             const { active: previousActiveBalance } = await registry.balanceOf(jurorActiveAddress)
-            await brightIdHelper.expireVerifiedUsers()
-            assert.isFalse(await brightIdRegister.isVerified(jurorActiveAddress))
+            await identityHelper.expireVerifiedUsers()
+            assert.isFalse(await identityRegistry.isVerified(jurorActiveAddress))
 
-            await brightIdHelper.registerUserWithData([jurorActiveAddress, jurorBrightIdAddress], registry.address, activateFunctionData)
+            await identityHelper.registerUserWithData([jurorActiveAddress, jurorIdentityAddress], registry.address, activateFunctionData)
 
             const { active: currentActiveBalance } = await registry.balanceOf(jurorActiveAddress)
             assertBn(currentActiveBalance, previousActiveBalance.add(activateAmount), 'Incorrect active balance')
-            assert.isTrue(await brightIdRegister.isVerified(jurorActiveAddress))
+            assert.isTrue(await identityRegistry.isVerified(jurorActiveAddress))
           })
         })
       })
@@ -709,30 +709,30 @@ contract('JurorsRegistry', ([_, jurorActiveAddress, jurorBrightIdAddress, juror2
 
             const expectedActiveBalance = activeAddressPreviousTotalActiveStake.sub(expectedAmount)
             const activeAddressCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(jurorActiveAddress)
-            const brightIdAddressCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(jurorBrightIdAddress)
+            const identityAddressCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(jurorIdentityAddress)
             assertBn(activeAddressCurrentTotalActiveStake, expectedActiveBalance, 'incorrect total active stake for active account')
-            assertBn(brightIdAddressCurrentTotalActiveStake, expectedActiveBalance, 'incorrect total active stake for brightId account')
+            assertBn(identityAddressCurrentTotalActiveStake, expectedActiveBalance, 'incorrect total active stake for identity account')
           })
 
-          it('updates the total active balance correctly when a different juror with the same brightid is used', async () => {
-            await ANJ.generateTokens(jurorBrightIdAddress, MIN_ACTIVE_AMOUNT)
-            await ANJ.approveAndCall(registry.address, MIN_ACTIVE_AMOUNT, '0x', { from: jurorBrightIdAddress })
-            await registry.activate(MIN_ACTIVE_AMOUNT, { from: jurorBrightIdAddress })
+          it('updates the total active balance correctly when a different juror with the same identity is used', async () => {
+            await ANJ.generateTokens(jurorIdentityAddress, MIN_ACTIVE_AMOUNT)
+            await ANJ.approveAndCall(registry.address, MIN_ACTIVE_AMOUNT, '0x', { from: jurorIdentityAddress })
+            await registry.activate(MIN_ACTIVE_AMOUNT, { from: jurorIdentityAddress })
             const activeAddressPreviousTotalActiveStake = await registry.jurorsTotalActiveStake(jurorActiveAddress)
 
             await registry.deactivate(requestedAmount, { from })
 
             const activeAddressMiddleTotalActiveStake = await registry.jurorsTotalActiveStake(jurorActiveAddress)
-            const brightIdAddressMiddleTotalActiveStake = await registry.jurorsTotalActiveStake(jurorBrightIdAddress)
+            const identityAddressMiddleTotalActiveStake = await registry.jurorsTotalActiveStake(jurorIdentityAddress)
             assertBn(activeAddressMiddleTotalActiveStake, activeAddressPreviousTotalActiveStake.sub(expectedAmount), 'Incorrect active account total active stake after first deactivate')
-            assertBn(brightIdAddressMiddleTotalActiveStake, activeAddressPreviousTotalActiveStake.sub(expectedAmount), 'Incorrect brightid account total active stake after first deactivate')
+            assertBn(identityAddressMiddleTotalActiveStake, activeAddressPreviousTotalActiveStake.sub(expectedAmount), 'Incorrect identity account total active stake after first deactivate')
 
-            await registry.deactivate(MIN_ACTIVE_AMOUNT, { from: jurorBrightIdAddress })
+            await registry.deactivate(MIN_ACTIVE_AMOUNT, { from: jurorIdentityAddress })
 
             const activeAddressCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(jurorActiveAddress)
-            const brightIdAddressCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(jurorBrightIdAddress)
+            const identityAddressCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(jurorIdentityAddress)
             assertBn(activeAddressCurrentTotalActiveStake, activeAddressMiddleTotalActiveStake.sub(MIN_ACTIVE_AMOUNT), 'Incorrect active account total active stake after second deactivate')
-            assertBn(brightIdAddressCurrentTotalActiveStake, activeAddressMiddleTotalActiveStake.sub(MIN_ACTIVE_AMOUNT), 'Incorrect brightid account total active stake after second deactivate')
+            assertBn(identityAddressCurrentTotalActiveStake, activeAddressMiddleTotalActiveStake.sub(MIN_ACTIVE_AMOUNT), 'Incorrect identity account total active stake after second deactivate')
           })
 
           it('does not affect the active balance of the current term', async () => {
@@ -1024,9 +1024,9 @@ contract('JurorsRegistry', ([_, jurorActiveAddress, jurorBrightIdAddress, juror2
 
   describe('receive registration', () => {
 
-    context('when the caller is not the BrightIdRegister', () => {
+    context('when the caller is not the IdentityRegistry', () => {
       it('reverts', async () => {
-        await assertRevert(registry.receiveRegistration(jurorActiveAddress, jurorBrightIdAddress, '0x0'), 'JR_SENDER_NOT_BRIGHTID_REGISTER')
+        await assertRevert(registry.receiveRegistration(jurorActiveAddress, jurorIdentityAddress, '0x0'), 'JR_SENDER_NOT_IDENTITY_REGISTRY')
       })
     })
 
@@ -1038,8 +1038,8 @@ contract('JurorsRegistry', ([_, jurorActiveAddress, jurorBrightIdAddress, juror2
 
         const incorrectFunctionData = registry.contract.methods.processDeactivationRequest(jurorActiveAddress).encodeABI()
 
-        await assertRevert(brightIdHelper.registerUserWithData(
-          [jurorActiveAddress, jurorBrightIdAddress], registry.address, incorrectFunctionData), 'JR_NO_FUNCTION_MATCH')
+        await assertRevert(identityHelper.registerUserWithData(
+          [jurorActiveAddress, jurorIdentityAddress], registry.address, incorrectFunctionData), 'JR_NO_FUNCTION_MATCH')
       })
     })
   })

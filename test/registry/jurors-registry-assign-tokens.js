@@ -1,6 +1,6 @@
 const { assertBn } = require('../helpers/asserts/assertBn')
 const { buildHelper } = require('../helpers/wrappers/court')(web3, artifacts)
-const { buildBrightIdHelper } = require('../helpers/wrappers/brightid')(web3, artifacts)
+const { buildIdentityHelper } = require('../helpers/wrappers/identity')(web3, artifacts)
 const { assertRevert } = require('../helpers/asserts/assertThrow')
 const { REGISTRY_EVENTS } = require('../helpers/utils/events')
 const { decodeEventsOfType } = require('../helpers/lib/decodeEvent')
@@ -26,10 +26,10 @@ contract('JurorsRegistry', ([_, juror, someone, jurorUniqueAddress]) => {
   })
 
   beforeEach('create jurors registry module', async () => {
-    const brightIdHelper = buildBrightIdHelper()
-    const brightIdRegister = await brightIdHelper.deploy()
-    await brightIdHelper.registerUserWithMultipleAddresses(jurorUniqueAddress, juror)
-    await controller.setBrightIdRegister(brightIdRegister.address)
+    const identityHelper = buildIdentityHelper()
+    const identityRegistry = await identityHelper.deploy()
+    await identityHelper.registerUserWithMultipleAddresses(jurorUniqueAddress, juror)
+    await controller.setIdentityRegistry(identityRegistry.address)
 
     registry = await JurorsRegistry.new(controller.address, TOTAL_ACTIVE_BALANCE_LIMIT)
     await controller.setJurorsRegistry(registry.address)

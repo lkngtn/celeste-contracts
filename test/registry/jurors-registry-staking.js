@@ -1,7 +1,7 @@
 const { assertBn } = require('../helpers/asserts/assertBn')
 const { bn, bigExp } = require('../helpers/lib/numbers')
 const { buildHelper } = require('../helpers/wrappers/court')(web3, artifacts)
-const { buildBrightIdHelper } = require('../helpers/wrappers/brightid')(web3, artifacts)
+const { buildIdentityHelper } = require('../helpers/wrappers/identity')(web3, artifacts)
 const { assertRevert } = require('../helpers/asserts/assertThrow')
 const { ACTIVATE_DATA } = require('../helpers/utils/jurors')
 const { REGISTRY_EVENTS } = require('../helpers/utils/events')
@@ -15,8 +15,8 @@ const ERC20 = artifacts.require('ERC20Mock')
 
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
-contract('JurorsRegistry', ([_, juror, juror2, jurorBrightIdAddress, juror2BrightIdAddress]) => {
-  let controller, registry, disputeManager, ANJ, brightIdRegister, brightIdHelper
+contract('JurorsRegistry', ([_, juror, juror2, jurorIdentityAddress, juror2IdentityAddress]) => {
+  let controller, registry, disputeManager, ANJ, identityRegistry, identityHelper
 
   const MIN_ACTIVE_AMOUNT = bigExp(100, 18)
   const TOTAL_ACTIVE_BALANCE_LIMIT = bigExp(100e6, 18)
@@ -27,25 +27,25 @@ contract('JurorsRegistry', ([_, juror, juror2, jurorBrightIdAddress, juror2Brigh
     disputeManager = await DisputeManager.new(controller.address)
     await controller.setDisputeManager(disputeManager.address)
 
-    brightIdHelper = buildBrightIdHelper()
-    brightIdRegister = await brightIdHelper.deploy()
-    await brightIdHelper.registerUsersWithMultipleAddresses(
-      [[jurorBrightIdAddress, juror], [juror2BrightIdAddress, juror2]])
-    await controller.setBrightIdRegister(brightIdRegister.address)
+    identityHelper = buildIdentityHelper()
+    identityRegistry = await identityHelper.deploy()
+    await identityHelper.registerUsersWithMultipleAddresses(
+      [[jurorIdentityAddress, juror], [juror2IdentityAddress, juror2]])
+    await controller.setIdentityRegistry(identityRegistry.address)
 
     registry = await JurorsRegistry.new(controller.address, TOTAL_ACTIVE_BALANCE_LIMIT)
     await controller.setJurorsRegistry(registry.address)
 
-    // Uncomment the below to test calling stake() and unstake() via the BrightIdRegister. Note some tests are expected to fail
+    // Uncomment the below to test calling stake() and unstake() via the IdentityRegistry. Note some tests are expected to fail
     // registry.stake = async (amount, data, { from }) => {
-    //   console.log("Via BrightIdRegister")
+    //   console.log("Via IdentityRegistry")
     //   const stakeFunctionData = registry.contract.methods.stake(amount.toString(), data).encodeABI()
     //   if (from === juror) {
-    //     return await brightIdHelper.registerUserWithData([juror, jurorBrightIdAddress], registry.address, stakeFunctionData)
+    //     return await identityHelper.registerUserWithData([juror, jurorIdentityAddress], registry.address, stakeFunctionData)
     //   } else if (from === juror2) {
-    //     return await brightIdHelper.registerUserWithData([juror2, juror2BrightIdAddress], registry.address, stakeFunctionData)
+    //     return await identityHelper.registerUserWithData([juror2, juror2IdentityAddress], registry.address, stakeFunctionData)
     //   } else {
-    //     return await brightIdHelper.registerUserWithData([from], registry.address, stakeFunctionData)
+    //     return await identityHelper.registerUserWithData([from], registry.address, stakeFunctionData)
     //   }
     // }
   })
@@ -167,7 +167,7 @@ contract('JurorsRegistry', ([_, juror, juror2, jurorBrightIdAddress, juror2Brigh
           itHandlesStakesProperlyFor(amount, data)
         })
 
-        context('when the juror calls stake through the BrightIdRegister', () => {
+        context('when the juror calls stake through the IdentityRegistry', () => {
           it('stakes tokens as expected', async () => {
             const stakeAmount = MIN_ACTIVE_AMOUNT
             await ANJ.generateTokens(from, stakeAmount)
@@ -175,7 +175,7 @@ contract('JurorsRegistry', ([_, juror, juror2, jurorBrightIdAddress, juror2Brigh
             const stakeFunctionData = registry.contract.methods.stake(stakeAmount.toString(), data).encodeABI()
             const { available: previousAvailableBalance } = await registry.balanceOf(from)
 
-            await brightIdHelper.registerUserWithData([juror, jurorBrightIdAddress], registry.address, stakeFunctionData)
+            await identityHelper.registerUserWithData([juror, jurorIdentityAddress], registry.address, stakeFunctionData)
 
             const { available: currentAvailableBalance } = await registry.balanceOf(from)
             assertBn(currentAvailableBalance, previousAvailableBalance.add(stakeAmount), 'available balances do not match')
@@ -340,7 +340,7 @@ contract('JurorsRegistry', ([_, juror, juror2, jurorBrightIdAddress, juror2Brigh
           })
         })
 
-        context('when the juror calls stake through the BrightIdRegister', () => {
+        context('when the juror calls stake through the IdentityRegistry', () => {
           it('stakes tokens as expected', async () => {
             const stakeAmount = MIN_ACTIVE_AMOUNT
             await ANJ.generateTokens(from, TOTAL_ACTIVE_BALANCE_LIMIT)
@@ -348,7 +348,7 @@ contract('JurorsRegistry', ([_, juror, juror2, jurorBrightIdAddress, juror2Brigh
             const stakeFunctionData = registry.contract.methods.stake(stakeAmount.toString(), data).encodeABI()
             const { active: previousActiveBalance } = await registry.balanceOf(from)
 
-            await brightIdHelper.registerUserWithData([juror, jurorBrightIdAddress], registry.address, stakeFunctionData)
+            await identityHelper.registerUserWithData([juror, jurorIdentityAddress], registry.address, stakeFunctionData)
 
             const { active: currentActiveBalance } = await registry.balanceOf(from)
             assertBn(currentActiveBalance, previousActiveBalance.add(stakeAmount), 'available balances do not match')

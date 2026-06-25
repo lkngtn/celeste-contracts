@@ -1,7 +1,7 @@
 {
   "name": "@1hive/celeste",
   "version": "0.1.7",
-  "description": "Celeste Oracle",
+  "description": "Celeste Oracle fork with provider-neutral identity registry",
   "author": "1Hive",
   "license": "GPL-3.0",
   "files": [
@@ -12,19 +12,19 @@
   ],
   "scripts": {
     "compile": "buidler compile",
-    "compile:brightid": "buidler compile --config buidler.config.brightid.js",
-    "test": "yarn compile:brightid && buidler test",
+    "test": "yarn compile && buidler test test/honey-v2-identity-registry.js test/registry/*.js test/court/controller/*.js test/subscriptions/*.js test/feesUpdater/*.js",
     "test:gas": "buidler test test/court/court-gas.js",
     "test:controller": "buidler test test/court/controller/*",
     "test:subscriptions": "buidler test test/subscriptions/*",
     "test:disputes": "buidler test test/disputes/*",
     "test:feesupdater": "buidler test test/feesUpdater/*",
     "test:registry": "buidler test test/registry/*",
-    "test:voting": "buidler test test/voting/*"
+    "test:voting": "buidler test test/voting/*",
+    "test:full:legacy": "buidler test",
+    "deploy:identity-fork": "buidler run scripts/deploy-honey-v2-celeste.js"
   },
   "dependencies": {},
   "devDependencies": {
-    "@1hive/apps-brightid-register": "^0.1.7",
     "@aragon/test-helpers": "^2.1.0",
     "@aragon/truffle-config-v5": "^1.0.0",
     "@aragon/contract-helpers-test": "^0.1.0-rc.2",

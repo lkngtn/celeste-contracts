@@ -2,7 +2,7 @@ const { assertBn } = require('../helpers/asserts/assertBn')
 const { bn, bigExp } = require('../helpers/lib/numbers')
 const { getEventAt } = require('@aragon/test-helpers/events')
 const { buildHelper } = require('../helpers/wrappers/court')(web3, artifacts)
-const { buildBrightIdHelper } = require('../helpers/wrappers/brightid')(web3, artifacts)
+const { buildIdentityHelper } = require('../helpers/wrappers/identity')(web3, artifacts)
 const { assertRevert } = require('../helpers/asserts/assertThrow')
 const { REGISTRY_EVENTS } = require('../helpers/utils/events')
 const { decodeEventsOfType } = require('../helpers/lib/decodeEvent')
@@ -15,7 +15,7 @@ const DisputeManager = artifacts.require('DisputeManagerMockForRegistry')
 const ERC20 = artifacts.require('ERC20Mock')
 
 contract('JurorsRegistry', ([_, juror, secondJuror, thirdJuror, fourthJuror, anyone,
-  jurorBrightIdAddress, secondJurorBrightIdAddress, thirdJurorBrightIdAddress, fourthJurorBrightIdAddress]) => {
+  jurorIdentityAddress, secondJurorIdentityAddress, thirdJurorIdentityAddress, fourthJurorIdentityAddress]) => {
 
   let controller, registry, disputeManager, ANJ
 
@@ -38,11 +38,11 @@ contract('JurorsRegistry', ([_, juror, secondJuror, thirdJuror, fourthJuror, any
   })
 
   beforeEach('create jurors registry module', async () => {
-    const brightIdHelper = buildBrightIdHelper()
-    const brightIdRegister = await brightIdHelper.deploy()
-    await brightIdHelper.registerUsersWithMultipleAddresses([[jurorBrightIdAddress, juror],
-      [secondJurorBrightIdAddress, secondJuror], [thirdJurorBrightIdAddress, thirdJuror], [fourthJurorBrightIdAddress, fourthJuror]])
-    await controller.setBrightIdRegister(brightIdRegister.address)
+    const identityHelper = buildIdentityHelper()
+    const identityRegistry = await identityHelper.deploy()
+    await identityHelper.registerUsersWithMultipleAddresses([[jurorIdentityAddress, juror],
+      [secondJurorIdentityAddress, secondJuror], [thirdJurorIdentityAddress, thirdJuror], [fourthJurorIdentityAddress, fourthJuror]])
+    await controller.setIdentityRegistry(identityRegistry.address)
 
     registry = await JurorsRegistry.new(controller.address, TOTAL_ACTIVE_BALANCE_LIMIT)
     await controller.setJurorsRegistry(registry.address)
@@ -176,7 +176,7 @@ contract('JurorsRegistry', ([_, juror, secondJuror, thirdJuror, fourthJuror, any
               assertBn(thirdJurorPreviousDeactivationBalance, thirdJurorCurrentDeactivationBalance, 'second slashed juror deactivation balance does not match')
             })
 
-            it('updates the total active stake of the jurors brightid account', async () => {
+            it('updates the total active stake of the jurors identity account', async () => {
               const firstJurorPreviousTotalActiveStake = await registry.jurorsTotalActiveStake(juror)
               const thirdJurorPreviousTotalActiveStake = await registry.jurorsTotalActiveStake(thirdJuror)
 
@@ -187,10 +187,10 @@ contract('JurorsRegistry', ([_, juror, secondJuror, thirdJuror, fourthJuror, any
               assertBn(firstJurorCurrentTotalActiveStake, firstJurorPreviousTotalActiveStake.sub(DRAFT_LOCK_AMOUNT.mul(bn(3))), 'first slashed juror total active balance does not match')
               assertBn(thirdJurorCurrentTotalActiveStake, thirdJurorPreviousTotalActiveStake.sub(DRAFT_LOCK_AMOUNT.mul(bn(6))), 'second slashed juror total active balance does not match')
 
-              const firstJurorBrightIdCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(jurorBrightIdAddress)
-              const thirdJurorBrightIDCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(thirdJurorBrightIdAddress)
-              assertBn(firstJurorCurrentTotalActiveStake, firstJurorBrightIdCurrentTotalActiveStake, 'first slashed juror total active balance does not match')
-              assertBn(thirdJurorCurrentTotalActiveStake, thirdJurorBrightIDCurrentTotalActiveStake, 'second slashed juror total active balance does not match')
+              const firstJurorIdentityCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(jurorIdentityAddress)
+              const thirdJurorIdentityCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(thirdJurorIdentityAddress)
+              assertBn(firstJurorCurrentTotalActiveStake, firstJurorIdentityCurrentTotalActiveStake, 'first slashed juror total active balance does not match')
+              assertBn(thirdJurorCurrentTotalActiveStake, thirdJurorIdentityCurrentTotalActiveStake, 'second slashed juror total active balance does not match')
             })
 
             it('emits the corresponding events', async () => {
@@ -284,15 +284,15 @@ contract('JurorsRegistry', ([_, juror, secondJuror, thirdJuror, fourthJuror, any
           assertBn(previousAvailableBalance, currentAvailableBalance, 'available balances do not match')
         })
 
-        it('updates total active stake for jurors brightid account', async () => {
+        it('updates total active stake for jurors identity account', async () => {
           const jurorPreviousTotalActiveStake = await registry.jurorsTotalActiveStake(juror)
 
           await disputeManager.collect(juror, amount)
 
           const jurorCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(juror)
-          const jurorBrightIdCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(jurorBrightIdAddress)
+          const jurorIdentityCurrentTotalActiveStake = await registry.jurorsTotalActiveStake(jurorIdentityAddress)
           assertBn(jurorCurrentTotalActiveStake, jurorPreviousTotalActiveStake.sub(amount).add(deactivationReduced), 'total active balances do not match')
-          assertBn(jurorBrightIdCurrentTotalActiveStake, jurorPreviousTotalActiveStake.sub(amount).add(deactivationReduced), 'total active balances do not match')
+          assertBn(jurorIdentityCurrentTotalActiveStake, jurorPreviousTotalActiveStake.sub(amount).add(deactivationReduced), 'total active balances do not match')
         })
 
         it('does not affect the active balance of the current term', async () => {

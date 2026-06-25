@@ -8,7 +8,7 @@ import "../config/ConfigConsumer.sol";
 import "../../voting/ICRVoting.sol";
 import "../../treasury/ITreasury.sol";
 import "../../registry/IJurorsRegistry.sol";
-import "../../brightid/IBrightIdRegister.sol";
+import "../../identity/IIdentityRegistry.sol";
 import "../../disputes/IDisputeManager.sol";
 
 contract Controlled is IsContract, ConfigConsumer {
@@ -134,11 +134,11 @@ contract Controlled is IsContract, ConfigConsumer {
     }
 
     /**
-    * @dev Internal function to fetch the address of the BrightId register implementation from the controller
-    * @return Address of the BrightId register implementation
+    * @dev Internal function to fetch the address of the Identity register implementation from the controller
+    * @return Address of the Identity register implementation
     */
-    function _brightIdRegister() internal view returns (IBrightIdRegister) {
-        return IBrightIdRegister(controller.getBrightIdRegister());
+    function _identityRegistry() internal view returns (IIdentityRegistry) {
+        return IIdentityRegistry(controller.getIdentityRegistry());
     }
 
     /**

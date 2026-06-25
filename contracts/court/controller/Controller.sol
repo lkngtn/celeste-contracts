@@ -29,8 +29,8 @@ contract Controller is IsContract, CourtClock, CourtConfig {
     // Subscriptions module ID - keccak256(abi.encodePacked("SUBSCRIPTIONS"))
     bytes32 internal constant SUBSCRIPTIONS = 0x2bfa3327fe52344390da94c32a346eeb1b65a8b583e4335a419b9471e88c1365;
 
-    // BrightIDRegister module ID - keccak256(abi.encodePacked("BRIGHTID_REGISTER"))
-    bytes32 internal constant BRIGHTID_REGISTER = 0xc8d8a5444a51ecc23e5091f18c4162834512a4bc5cae72c637db45c8c37b3329;
+    // IdentityRegister module ID - keccak256(abi.encodePacked("IDENTITY_REGISTRY"))
+    bytes32 internal constant IDENTITY_REGISTRY = 0x3996d91349e7a673ed7b0e52e2ca432e52722f468cbd3f26bac1c0d9d3f0a17e;
 
     /**
     * @dev Governor of the whole system. Set of three addresses to recover funds, change configuration settings and setup modules
@@ -451,11 +451,11 @@ contract Controller is IsContract, CourtClock, CourtConfig {
     }
 
     /**
-    * @dev Tell the address of the BrightId register
-    * @return Address of the BrightId register
+    * @dev Tell the address of the Identity register
+    * @return Address of the Identity register
     */
-    function getBrightIdRegister() external view returns (address) {
-        return _getBrightIdRegister();
+    function getIdentityRegistry() external view returns (address) {
+        return _getIdentityRegistry();
     }
 
     /**
@@ -531,11 +531,11 @@ contract Controller is IsContract, CourtClock, CourtConfig {
 
 
     /**
-    * @dev Internal function to tell the address of the BrightId register
-    * @return Address of the BrightId register
+    * @dev Internal function to tell the address of the Identity register
+    * @return Address of the Identity register
     */
-    function _getBrightIdRegister() internal view returns (address) {
-        return _getModule(BRIGHTID_REGISTER);
+    function _getIdentityRegistry() internal view returns (address) {
+        return _getModule(IDENTITY_REGISTRY);
     }
 
     /**

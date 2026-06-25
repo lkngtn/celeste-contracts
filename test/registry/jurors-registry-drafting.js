@@ -3,7 +3,7 @@ const { assertBn } = require('../helpers/asserts/assertBn')
 const { bn, bigExp } = require('../helpers/lib/numbers')
 const { getEventAt } = require('@aragon/test-helpers/events')
 const { buildHelper } = require('../helpers/wrappers/court')(web3, artifacts)
-const { buildBrightIdHelper } = require('../helpers/wrappers/brightid')(web3, artifacts)
+const { buildIdentityHelper } = require('../helpers/wrappers/identity')(web3, artifacts)
 const { assertRevert } = require('../helpers/asserts/assertThrow')
 const { simulateDraft } = require('../helpers/utils/registry')
 const { REGISTRY_EVENTS } = require('../helpers/utils/events')
@@ -19,7 +19,7 @@ const ERC20 = artifacts.require('ERC20Mock')
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 
 contract('JurorsRegistry', ([_, juror500, juror1000, juror1500, juror2000, juror2500, juror3000, juror3500, juror4000]) => {
-  let controller, registry, disputeManager, ANJ, brightIdRegister
+  let controller, registry, disputeManager, ANJ, identityRegistry
 
   const DRAFT_LOCK_PCT = bn(2000) // 20%
   const MIN_ACTIVE_AMOUNT = bigExp(100, 18)
@@ -55,17 +55,17 @@ contract('JurorsRegistry', ([_, juror500, juror1000, juror1500, juror2000, juror
     { address: juror4000, initialActiveBalance: balances[7] }
   ]
 
-  before('create brightid register', async () => {
-    const brightIdHelper = buildBrightIdHelper()
-    brightIdRegister = await brightIdHelper.deploy()
-    await brightIdHelper.registerUsers([juror500, juror1000, juror1500, juror2000, juror2500, juror3000, juror3500, juror4000])
+  before('create identity register', async () => {
+    const identityHelper = buildIdentityHelper()
+    identityRegistry = await identityHelper.deploy()
+    await identityHelper.registerUsers([juror500, juror1000, juror1500, juror2000, juror2500, juror3000, juror3500, juror4000])
   })
 
   beforeEach('create base contracts', async () => {
     ANJ = await ERC20.new('ANJ Token', 'ANJ', 18)
     controller = await buildHelper().deploy({ minActiveBalance: MIN_ACTIVE_AMOUNT,
       maxMaxPctTotalSupply: MAX_MAX_PCT_TOTAL_SUPPLY, feeToken: ANJ })
-    await controller.setBrightIdRegister(brightIdRegister.address)
+    await controller.setIdentityRegistry(identityRegistry.address)
 
     registry = await JurorsRegistry.new(controller.address, TOTAL_ACTIVE_BALANCE_LIMIT)
     await controller.setJurorsRegistry(registry.address)

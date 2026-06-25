@@ -30,7 +30,7 @@ const MODULE_IDS = {
   voting: '0x7cbb12e82a6d63ff16fe43977f43e3e2b247ecd4e62c0e340da8800a48c67346',
   registry: '0x3b21d36b36308c830e6c4053fb40a3b6d79dde78947fbf6b0accd30720ab5370',
   subscriptions: '0x2bfa3327fe52344390da94c32a346eeb1b65a8b583e4335a419b9471e88c1365',
-  brightIdRegister: '0xc8d8a5444a51ecc23e5091f18c4162834512a4bc5cae72c637db45c8c37b3329'
+  identityRegistry: '0x3996d91349e7a673ed7b0e52e2ca432e52722f468cbd3f26bac1c0d9d3f0a17e'
 }
 
 const DEFAULTS = {
@@ -66,7 +66,7 @@ const DEFAULTS = {
 
 module.exports = (web3, artifacts) => {
   const { advanceBlocks } = require('../lib/blocks')(web3)
-  const { buildBrightIdHelper } = require('./brightid')(web3, artifacts)
+  const { buildIdentityHelper } = require('./identity')(web3, artifacts)
 
   class CourtHelper {
     constructor(web3, artifacts) {
@@ -212,7 +212,7 @@ module.exports = (web3, artifacts) => {
       await this.feeToken.generateTokens(await this._getAccount(0), minTotalSupplyWithExtra)
 
       for (const { address, initialActiveBalance } of jurors) {
-        await this.brightIdHelper.registerUser(address)
+        await this.identityHelper.registerUser(address)
         await this.feeToken.generateTokens(address, initialActiveBalance)
         await this.feeToken.approveAndCall(this.jurorsRegistry.address, initialActiveBalance, ACTIVATE_DATA, { from: address })
       }
@@ -406,10 +406,10 @@ module.exports = (web3, artifacts) => {
       if (!this.voting) this.voting = await this.artifacts.require('CRVoting').new(this.court.address)
       if (!this.treasury) this.treasury = await this.artifacts.require('CourtTreasury').new(this.court.address)
 
-      if (!this.brightIdRegister) {
-        this.brightIdHelper = buildBrightIdHelper()
-        this.brightIdRegister = await this.brightIdHelper.deploy(await this._getAccount(0), await this._getAccount(0))
-        await this.brightIdHelper.registerUser(this.juror || await this._getAccount(0))
+      if (!this.identityRegistry) {
+        this.identityHelper = buildIdentityHelper()
+        this.identityRegistry = await this.identityHelper.deploy(await this._getAccount(0), await this._getAccount(0))
+        await this.identityHelper.registerUser(this.juror || await this._getAccount(0))
       }
 
       if (!this.jurorsRegistry) {
@@ -429,7 +429,7 @@ module.exports = (web3, artifacts) => {
       }
 
       const ids = Object.values(MODULE_IDS)
-      const implementations = [this.disputeManager, this.treasury, this.voting, this.jurorsRegistry, this.subscriptions, this.brightIdRegister].map(i => i.address)
+      const implementations = [this.disputeManager, this.treasury, this.voting, this.jurorsRegistry, this.subscriptions, this.identityRegistry].map(i => i.address)
       await this.court.setModules(ids, implementations, { from: this.modulesGovernor })
 
       const zeroTermStartTime = this.firstTermStartTime.sub(this.termDuration)

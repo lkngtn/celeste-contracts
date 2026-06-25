@@ -310,7 +310,7 @@ contract('Controller', ([_, fundsGovernor, configGovernor, feesUpdater, modulesG
             { name: 'TREASURY', getter: 'getTreasury' },
             { name: 'JURORS_REGISTRY', getter: 'getJurorsRegistry' },
             { name: 'SUBSCRIPTIONS', getter: 'getSubscriptions' },
-            { name: 'BRIGHTID_REGISTER', getter: 'getBrightIdRegister' }
+            { name: 'IDENTITY_REGISTRY', getter: 'getIdentityRegistry' }
           ]
 
           for (const { name, getter } of modules) {
