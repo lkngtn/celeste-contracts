@@ -1,6 +1,8 @@
 # Honey v2 Celeste fork
 
-This directory vendors `1Hive/celeste-contracts` as the production Celeste baseline for Honey v2.
+This repository is the Honey v2 Celeste workstream forked from `1Hive/celeste-contracts`.
+
+Current direction: use the existing Celeste codebase as the mechanism/reference baseline, but aim for a full Honey v2 rewrite rather than a minimal BrightID compatibility patch. See [`docs/honey-v2-rewrite-scope.md`](docs/honey-v2-rewrite-scope.md).
 
 ## Identity-registry scope
 
@@ -18,7 +20,9 @@ Minimal target behavior:
 
 Compatibility note: where legacy Celeste plumbing still expects `hasUniqueUserId()` / `uniqueUserId()`, the simplified registry can treat the account address itself as the unique id. That preserves the Celeste integration boundary while making active-stake caps per registered address.
 
-## Identity-registry changes
+## Current patch-branch identity-registry changes
+
+The current branch still contains the initial minimal identity-registry refactor. It is useful as a reference diff and interim validation path, but it is not necessarily the final production architecture.
 
 Changes from upstream made in this workspace:
 
